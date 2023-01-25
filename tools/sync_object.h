@@ -51,9 +51,9 @@ extern "C"
         CRITICAL_SECTION m_mutex;
         CONDITION_VARIABLE m_cond;
 #else
-    pthread_mutex_t m_mutex;
-    pthread_cond_t m_cond;
-    pthread_condattr_t m_cond_attr;
+        pthread_mutex_t m_mutex;
+        pthread_cond_t m_cond;
+        pthread_condattr_t m_cond_attr;
 #endif
     };
 
