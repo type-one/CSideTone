@@ -35,13 +35,14 @@ with default parameters.
 On Linux, just use cmake .
 On Windows, just use cmake-gui to generate a Visual Studio solution
 
-Tested on Windows 10 and Ubuntu Linux (under VMWare Player 17).  Should work also on Raspberry Pi.
+Tested on Windows 10 and Ubuntu/Debian Linux (on native host and in VMplayer).
+It should work also on Raspberry Pi. 
 It just use default capture and playback devices.
 
 Launch in a shell using "csidetone.exe" or "csidetone"
 Press "enter" to exit
 
-You can play with different parameters in the audio/audio_context.h
+You can play with different parameters in the audio/audio_config.h
 file: format, sample rate, channels, period.
 
 Recommended parameters are 22050 hz, mono (1 channel), signed 16, and a period between 

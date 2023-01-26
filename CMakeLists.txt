@@ -12,13 +12,13 @@ if(UNIX AND NOT APPLE)
 endif()
 
 if(UNIX AND (${CMAKE_SYSTEM_NAME} STREQUAL ${CMAKE_HOST_SYSTEM_NAME}))
-EXECUTE_PROCESS( COMMAND uname -m COMMAND tr -d '\n' OUTPUT_VARIABLE ARCHITECTURE )
+    EXECUTE_PROCESS( COMMAND uname -m COMMAND tr -d '\n' OUTPUT_VARIABLE ARCHITECTURE )
 elseif(ANDROID)
-set(ARCHITECTURE, ${ANDROID_ABI})
+    set(ARCHITECTURE, ${ANDROID_ABI})
 elseif(APPLE)
-set(ARCHITECTURE, ${OSX_ARCHITECTURES})
+    set(ARCHITECTURE, ${OSX_ARCHITECTURES})
 else()
-set(ARCHITECTURE, "unknown")
+    set(ARCHITECTURE, "unknown")
 endif()
 
 #detect Platform (Jetson, Raspberry Pi, ...)
@@ -67,26 +67,26 @@ set(CMAKE_C_STANDARD 11)
 set(CMAKE_C_STANDARD_REQUIRED True)
 
 if(NOT CMAKE_BUILD_TYPE)
-  set(CMAKE_BUILD_TYPE Debug)
+    set(CMAKE_BUILD_TYPE Debug)
 endif()
 
 if(LINUX) 
-set(CMAKE_CXX_FLAGS "-fpermissive -march=native")
-set(CMAKE_CXX_FLAGS_DEBUG "-g -Wall -Wextra -D DEBUG")
-set(CMAKE_CXX_FLAGS_RELEASE "-O3 -ffast-math -funsafe-math-optimizations -D NDEBUG")
+    set(CMAKE_CXX_FLAGS "-fpermissive -march=native")
+    set(CMAKE_CXX_FLAGS_DEBUG "-g -Wall -Wextra -D DEBUG")
+    set(CMAKE_CXX_FLAGS_RELEASE "-O3 -ffast-math -funsafe-math-optimizations -D NDEBUG")
 
-set(CMAKE_C_FLAGS "-march=native")
-set(CMAKE_C_FLAGS_DEBUG "-g -Wall -Wextra -D DEBUG")
-set(CMAKE_C_FLAGS_RELEASE "-O3 -ffast-math -funsafe-math-optimizations -D NDEBUG")
+    set(CMAKE_C_FLAGS "-march=native")
+    set(CMAKE_C_FLAGS_DEBUG "-g -Wall -Wextra -D DEBUG")
+    set(CMAKE_C_FLAGS_RELEASE "-O3 -ffast-math -funsafe-math-optimizations -D NDEBUG")
 
 elseif(WIN32)
-set(CMAKE_CXX_FLAGS "")
-set(CMAKE_CXX_FLAGS_DEBUG "-D DEBUG")
-set(CMAKE_CXX_FLAGS_RELEASE "/Ox /D NDEBUG /fp:fast")
+    set(CMAKE_CXX_FLAGS "")
+    set(CMAKE_CXX_FLAGS_DEBUG "-D DEBUG")
+    set(CMAKE_CXX_FLAGS_RELEASE "/Ox /D NDEBUG /fp:fast")
 
-set(CMAKE_C_FLAGS "")
-set(CMAKE_C_FLAGS_DEBUG "-D DEBUG")
-set(CMAKE_C_FLAGS_RELEASE "/Ox /D NDEBUG /fp:fast")
+    set(CMAKE_C_FLAGS "")
+    set(CMAKE_C_FLAGS_DEBUG "-D DEBUG")
+    set(CMAKE_C_FLAGS_RELEASE "/Ox /D NDEBUG /fp:fast")
 endif()
 
 # uname -m
@@ -123,7 +123,7 @@ set(TARGET_SRC
         main.c
         "${TARGET_AUDIO_SRC}"
         "${TARGET_TOOLS_SRC}"
-		"${TARGET_3RDPARTY_SRC}"
+        "${TARGET_3RDPARTY_SRC}"
 )
 
 include_directories("${PROJECT_SOURCE_DIR}")
@@ -134,9 +134,9 @@ add_executable(csidetone
    )
 
 if(LINUX) 
-target_link_libraries(csidetone -lm -lpthread -lasound)
+    target_link_libraries(csidetone -lm -lpthread -lasound -ldl)
 elseif(WIN32)
-target_link_libraries(csidetone winmm.lib)
+    target_link_libraries(csidetone winmm.lib)
 endif()
 
 
