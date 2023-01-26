@@ -3,6 +3,7 @@ Portable C voice capture and (relatively) low latency feedback
 
 https://github.com/type-one/CSideTone
 
+Note: C++17 implementation available at https://github.com/type-one/SideTone
 
 # What
 Small test program written in C11 to have voice feedback with reasonably short latency. 
