@@ -63,6 +63,11 @@ static void frame_capture(struct ma_device* device, void* output, const void* in
 
 int init_audio_capture(struct audio_capture* audio_cap, struct double_buffer* shared_buffer, struct audio_context* shared_context)
 {
+    if (!audio_cap || !shared_buffer || !shared_context || !shared_context->m_context)
+    {
+        return -1;
+    }
+
     audio_cap->m_shared_context = shared_context;
     audio_cap->m_shared_buffer = shared_buffer;
     audio_cap->m_capture_device = (struct ma_device*)malloc(sizeof(struct ma_device));
@@ -115,6 +120,11 @@ int init_audio_capture(struct audio_capture* audio_cap, struct double_buffer* sh
 
 int deinit_audio_capture(struct audio_capture* audio_cap)
 {
+    if (!audio_cap || !audio_cap->m_capture_device)
+    {
+        return -1;
+    }
+
     ma_device_uninit(audio_cap->m_capture_device);
     free(audio_cap->m_capture_device);
     audio_cap->m_capture_device = NULL;
@@ -124,6 +134,11 @@ int deinit_audio_capture(struct audio_capture* audio_cap)
 
 void audio_capture_start(struct audio_capture* audio_cap)
 {
+    if (!audio_cap || !audio_cap->m_capture_device)
+    {
+        return;
+    }
+
     if (MA_SUCCESS != ma_device_start(audio_cap->m_capture_device))
     {
         fprintf(stderr, "Failed to start capture device\n");
@@ -133,6 +148,11 @@ void audio_capture_start(struct audio_capture* audio_cap)
 
 void audio_capture_stop(struct audio_capture* audio_cap)
 {
+    if (!audio_cap || !audio_cap->m_capture_device)
+    {
+        return;
+    }
+
     if (MA_SUCCESS != ma_device_stop(audio_cap->m_capture_device))
     {
         fprintf(stderr, "Failed to stop capture device\n");
@@ -142,7 +162,16 @@ void audio_capture_stop(struct audio_capture* audio_cap)
 
 void audio_capture_on_capture(struct audio_capture* audio_cap, const sample_t* input, const size_t frames)
 {
+    if (!audio_cap || !audio_cap->m_shared_buffer || !input)
+    {
+        return;
+    }
+
     sample_t* output = (sample_t*)double_buffer_get_back(audio_cap->m_shared_buffer);
+    if (!output)
+    {
+        return;
+    }
 
     const size_t nb_samples_in_buffer = double_buffer_get_frame_size(audio_cap->m_shared_buffer) / (audio_channels * sizeof(sample_t));
     const size_t nb_frames = (frames < nb_samples_in_buffer) ? frames : nb_samples_in_buffer;

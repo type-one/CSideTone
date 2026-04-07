@@ -32,6 +32,11 @@
 
 int init_audio_context(struct audio_context* context)
 {
+    if (!context)
+    {
+        return -1;
+    }
+
     context->m_context = (struct ma_context*)malloc(sizeof(struct ma_context));
     if (!context->m_context)
     {
@@ -53,9 +58,18 @@ int init_audio_context(struct audio_context* context)
 
 int deinit_audio_context(struct audio_context* context)
 {
+    if (!context || !context->m_context)
+    {
+        return -1;
+    }
+
     if (MA_SUCCESS != ma_context_uninit(context->m_context))
     {
         return -1;
     }
+
+    free(context->m_context);
+    context->m_context = NULL;
+
     return 0;
 }

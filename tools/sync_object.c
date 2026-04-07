@@ -60,33 +60,35 @@ int init_sync_object(struct sync_object* sync, bool initial_state)
 
     return 0;
 #else 
-    if (pthread_mutex_init(&(sync->m_mutex), NULL) < 0)
+    if (0 != pthread_mutex_init(&(sync->m_mutex), NULL))
     {
         return -1;
     }
 
-    if (pthread_condattr_init(&(sync->m_cond_attr)) < 0)
+    if (0 != pthread_condattr_init(&(sync->m_cond_attr)))
     {
         goto destroy_mutex;
     }
 
-    if (pthread_condattr_setclock(&(sync->m_cond_attr), CLOCK_MONOTONIC) < 0)
+    if (0 != pthread_condattr_setclock(&(sync->m_cond_attr), CLOCK_MONOTONIC))
     {
-        goto destroy_cond;
+        goto destroy_cond_attr;
     }
 
-    if (pthread_cond_init(&(sync->m_cond), &(sync->m_cond_attr)) < 0)
+    if (0 != pthread_cond_init(&(sync->m_cond), &(sync->m_cond_attr)))
     {
-        goto destroy_cond;
+        goto destroy_cond_attr;
     }
+
+    (void)pthread_condattr_destroy(&(sync->m_cond_attr));
 
     return 0;
 
-destroy_cond:
-    pthread_cond_destroy(&(sync->m_cond));
+destroy_cond_attr:
+    (void)pthread_condattr_destroy(&(sync->m_cond_attr));
 
 destroy_mutex:
-    pthread_mutex_destroy(&(sync->m_mutex));
+    (void)pthread_mutex_destroy(&(sync->m_mutex));
 
     return -1;
 
@@ -103,7 +105,10 @@ int deinit_sync_object(struct sync_object* sync)
 #if defined(_WIN32)
     EnterCriticalSection(&(sync->m_mutex));
 #else
-    pthread_mutex_lock(&(sync->m_mutex));
+    if (0 != pthread_mutex_lock(&(sync->m_mutex)))
+    {
+        return -1;
+    }
 #endif
 
     sync->m_signaled = true;
@@ -113,17 +118,21 @@ int deinit_sync_object(struct sync_object* sync)
     LeaveCriticalSection(&(sync->m_mutex));
     WakeAllConditionVariable(&(sync->m_cond));
 #else
-    pthread_mutex_unlock(&(sync->m_mutex));
-    pthread_cond_broadcast(&(sync->m_cond));
+    (void)pthread_mutex_unlock(&(sync->m_mutex));
+    (void)pthread_cond_broadcast(&(sync->m_cond));
 #endif
 
 #if defined(_WIN32)
-    Sleep(100);
     DeleteCriticalSection(&(sync->m_mutex));
 #else
-    usleep(100000);
-    pthread_cond_destroy(&(sync->m_cond));
-    pthread_mutex_destroy(&(sync->m_mutex));
+    if (0 != pthread_cond_destroy(&(sync->m_cond)))
+    {
+        return -1;
+    }
+    if (0 != pthread_mutex_destroy(&(sync->m_mutex)))
+    {
+        return -1;
+    }
 #endif
 
     return 0;
@@ -139,7 +148,10 @@ int sync_object_signal(struct sync_object* sync)
 #if defined(_WIN32)
     EnterCriticalSection(&(sync->m_mutex));
 #else
-    pthread_mutex_lock(&(sync->m_mutex));
+    if (0 != pthread_mutex_lock(&(sync->m_mutex)))
+    {
+        return -1;
+    }
 #endif
 
     sync->m_signaled = true;
@@ -147,13 +159,16 @@ int sync_object_signal(struct sync_object* sync)
 #if defined(_WIN32)
     LeaveCriticalSection(&(sync->m_mutex));
 #else
-    pthread_mutex_unlock(&(sync->m_mutex));
+    (void)pthread_mutex_unlock(&(sync->m_mutex));
 #endif
 
 #if defined(_WIN32)
     WakeConditionVariable(&(sync->m_cond));
 #else
-    pthread_cond_signal(&(sync->m_cond));
+    if (0 != pthread_cond_signal(&(sync->m_cond)))
+    {
+        return -1;
+    }
 #endif
 
     return 0;
@@ -167,27 +182,42 @@ int sync_object_wait_for_signal(struct sync_object* sync)
     }
 
 #if defined(_WIN32)
+    int wait_result = 0;
     EnterCriticalSection(&(sync->m_mutex));
     while (!sync->m_signaled) /* loop to detect spurious wakes */
     {
         if (!SleepConditionVariableCS(&(sync->m_cond), &(sync->m_mutex), INFINITE))
         {
+            wait_result = -1;
             break; // don't loop
         }
     }
     sync->m_signaled = sync->m_stop;
     LeaveCriticalSection(&(sync->m_mutex));
+    if (0 != wait_result)
+    {
+        return -1;
+    }
 #else
-    pthread_mutex_lock(&(sync->m_mutex));
+    if (0 != pthread_mutex_lock(&(sync->m_mutex)))
+    {
+        return -1;
+    }
+    int wait_result = 0;
     while (!sync->m_signaled) /* loop to detect spurious wakes */
     {
         if (0 != pthread_cond_wait(&(sync->m_cond), &(sync->m_mutex)))
         {
+            wait_result = -1;
             break; // exit loop in case of error
         }
     }
     sync->m_signaled = sync->m_stop;
-    pthread_mutex_unlock(&(sync->m_mutex));
+    (void)pthread_mutex_unlock(&(sync->m_mutex));
+    if (0 != wait_result)
+    {
+        return -1;
+    }
 #endif
 
     return 0;
@@ -202,31 +232,62 @@ int sync_object_wait_for_signal_timed(struct sync_object* sync, unsigned long ti
 
 #if defined(_WIN32)
     const unsigned long timeout_ms = timeout_us / 1000;
+    int timed_wait_result = 0;
     EnterCriticalSection(&(sync->m_mutex));
     while (!sync->m_signaled) /* loop to detect spurious wakes */
     {
         if (!SleepConditionVariableCS(&(sync->m_cond), &(sync->m_mutex), timeout_ms))
         {
+            timed_wait_result = -1;
             break; // timeout
         }
     }
     sync->m_signaled = sync->m_stop;
     LeaveCriticalSection(&(sync->m_mutex));
+    if (0 != timed_wait_result)
+    {
+        return -1;
+    }
 #else
     struct timespec timeout;
-    clock_gettime(CLOCK_MONOTONIC, &timeout);
-    timeout.tv_nsec += timeout_us * 1000;
+    if (0 != clock_gettime(CLOCK_MONOTONIC, &timeout))
+    {
+        return -1;
+    }
+    timeout.tv_sec += (time_t)(timeout_us / 1000000UL);
+    timeout.tv_nsec += (long)((timeout_us % 1000000UL) * 1000UL);
+    if (timeout.tv_nsec >= 1000000000L)
+    {
+        timeout.tv_sec += 1;
+        timeout.tv_nsec -= 1000000000L;
+    }
 
-    pthread_mutex_lock(&(sync->m_mutex));
+    if (0 != pthread_mutex_lock(&(sync->m_mutex)))
+    {
+        return -1;
+    }
+    int timed_wait_result = 0;
     while (!sync->m_signaled) /* loop to detect spurious wakes */
     {
-        if (0 != pthread_cond_timedwait(&(sync->m_cond), &(sync->m_mutex), &timeout))
+        const int wait_res = pthread_cond_timedwait(&(sync->m_cond), &(sync->m_mutex), &timeout);
+        if (0 != wait_res)
         {
-            break; // timeout (returned ETIMEDOUT) or other error
+            if (ETIMEDOUT == wait_res)
+            {
+                sync->m_signaled = false;
+                (void)pthread_mutex_unlock(&(sync->m_mutex));
+                return -1;
+            }
+            timed_wait_result = -1;
+            break; // other error
         }
     }
     sync->m_signaled = sync->m_stop;
-    pthread_mutex_unlock(&(sync->m_mutex));
+    (void)pthread_mutex_unlock(&(sync->m_mutex));
+    if (0 != timed_wait_result)
+    {
+        return -1;
+    }
 #endif
 
     return 0;

@@ -61,6 +61,11 @@ static void frame_playback(struct ma_device* device, void* output, const void* i
 
 int init_audio_playback(struct audio_playback* audio_play, struct double_buffer* shared_buffer, struct audio_context* shared_context)
 {
+    if (!audio_play || !shared_buffer || !shared_context || !shared_context->m_context)
+    {
+        return -1;
+    }
+
     audio_play->m_shared_context = shared_context;
     audio_play->m_shared_buffer = shared_buffer;
     audio_play->m_playback_device = (struct ma_device*)malloc(sizeof(ma_device));
@@ -113,6 +118,11 @@ int init_audio_playback(struct audio_playback* audio_play, struct double_buffer*
 
 int deinit_audio_playback(struct audio_playback* audio_play)
 {
+    if (!audio_play || !audio_play->m_playback_device)
+    {
+        return -1;
+    }
+
     ma_device_uninit(audio_play->m_playback_device);
     free(audio_play->m_playback_device);
     audio_play->m_playback_device = NULL;
@@ -122,6 +132,11 @@ int deinit_audio_playback(struct audio_playback* audio_play)
 
 void audio_playback_start(struct audio_playback* audio_play)
 {
+    if (!audio_play || !audio_play->m_playback_device)
+    {
+        return;
+    }
+
     if (MA_SUCCESS != ma_device_start(audio_play->m_playback_device))
     {
         fprintf(stderr, "Failed to start playback device\n");
@@ -131,6 +146,11 @@ void audio_playback_start(struct audio_playback* audio_play)
 
 void audio_playback_stop(struct audio_playback* audio_play)
 {
+    if (!audio_play || !audio_play->m_playback_device || !audio_play->m_shared_buffer)
+    {
+        return;
+    }
+
     (void)double_buffer_swap(audio_play->m_shared_buffer); // wakeup
 
     if (MA_SUCCESS != ma_device_stop(audio_play->m_playback_device))
@@ -142,10 +162,19 @@ void audio_playback_stop(struct audio_playback* audio_play)
 
 void audio_playback_on_playback(struct audio_playback* audio_play, sample_t* output, const size_t frames)
 {
+    if (!audio_play || !audio_play->m_shared_buffer || !output)
+    {
+        return;
+    }
+
     const unsigned long timeout = audio_period_ms * 1000;
     (void)double_buffer_sync_timed(audio_play->m_shared_buffer, timeout); // wait for an available frame
 
     const sample_t* input = (const sample_t*)double_buffer_get_front(audio_play->m_shared_buffer);
+    if (!input)
+    {
+        return;
+    }
 
     const size_t nb_samples_in_buffer = double_buffer_get_frame_size(audio_play->m_shared_buffer) / (audio_channels * sizeof(sample_t));
     const size_t nb_frames = (frames < nb_samples_in_buffer) ? frames : nb_samples_in_buffer;
@@ -165,6 +194,12 @@ void audio_playback_on_playback(struct audio_playback* audio_play, sample_t* out
         {
             *output++ = *input++ / 2;
         }
+    }
+
+    /* Ensure the backend always receives a fully written output buffer. */
+    for (size_t i = nb_frames * audio_channels; i < frames * audio_channels; ++i)
+    {
+        *output++ = (sample_t)0;
     }
 
 #if defined(DISPLAY_PROGRESS)
