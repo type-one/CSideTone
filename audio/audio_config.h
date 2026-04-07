@@ -46,7 +46,7 @@
 // under Linux host
 // 22050, 8ms, 1 (in debug)
 
-// parameters to tune
+/** @brief Audio callback period in milliseconds. */
 #if defined(_WIN32)
 // increase if you hear clicks
 #define audio_period_ms 10    // works on Windows host, Core i7
@@ -55,10 +55,19 @@
 //#define audio_period_ms = 40; // works on Linux VM (vmplayer 17) under Windows host, Core i7
 #endif
 
+/** @brief Enable synchronization between producer and consumer threads. */
 #define audio_frame_sync true // sync producer/consumer
+
+/** @brief Audio sample rate in hertz. */
 #define audio_frequency 22050
+
+/** @brief Number of frames handled per callback period. */
 #define audio_frame_size ((audio_frequency * audio_period_ms) / 1000)
+
+/** @brief Number of interleaved channels (1 = mono, 2 = stereo). */
 #define audio_channels 1  // mono (1), stereo (2)
+
+/** @brief Audio sample scalar type used by the whole pipeline. */
 typedef int16_t sample_t; // S16_LE
 // typedef float sample_t;     // F32
 

@@ -38,10 +38,19 @@ extern "C"
 
     struct ma_context;
 
+/**
+ * @brief Compile-time type check helper.
+ *
+ * Evaluates to `true` when `x` has the exact `type`, otherwise `false`.
+ */
 #define is_of_type(x, type) _Generic(x, type : true, default : false)
 
+    /**
+     * @brief Shared audio backend context wrapper.
+     */
     struct audio_context
     {
+        /** @brief Pointer to the miniaudio context instance. */
         struct ma_context* m_context;
     };
 
@@ -51,7 +60,18 @@ extern "C"
 #define EXTERN_AUDIO_CONTEXT extern
 #endif
 
+    /**
+     * @brief Initialize the shared audio context.
+     * @param context Context object to initialize.
+     * @return `0` on success, `-1` on failure.
+     */
     EXTERN_AUDIO_CONTEXT int init_audio_context(struct audio_context* context);
+
+    /**
+     * @brief Deinitialize the shared audio context.
+     * @param context Context object to deinitialize.
+     * @return `0` on success, `-1` on failure.
+     */
     EXTERN_AUDIO_CONTEXT int deinit_audio_context(struct audio_context* context);
 
 

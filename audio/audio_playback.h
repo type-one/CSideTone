@@ -41,10 +41,16 @@ extern "C"
 
     struct double_buffer;
 
+    /**
+     * @brief Playback pipeline state and shared resources.
+     */
     struct audio_playback
     {
+        /** @brief Shared audio backend context. */
         struct audio_context* m_shared_context;
+        /** @brief Shared producer/consumer audio frame buffer. */
         struct double_buffer* m_shared_buffer;
+        /** @brief Miniaudio playback device handle. */
         struct ma_device* m_playback_device;
     };
 
@@ -55,11 +61,44 @@ extern "C"
 #define EXTERN_AUDIO_PLAYBACK extern
 #endif
 
+    /**
+     * @brief Initialize the playback device.
+     * @param audio_play Playback object to initialize.
+     * @param shared_buffer Shared double buffer used for frame exchange.
+     * @param shared_context Shared audio backend context.
+     * @return `0` on success, `-1` on failure.
+     */
     EXTERN_AUDIO_PLAYBACK int init_audio_playback(
         struct audio_playback* audio_play, struct double_buffer* shared_buffer, struct audio_context* shared_context);
+
+    /**
+     * @brief Deinitialize the playback device and release resources.
+     * @param audio_play Playback object to deinitialize.
+     * @return `0` on success, `-1` on failure.
+     */
     EXTERN_AUDIO_PLAYBACK int deinit_audio_playback(struct audio_playback* audio_play);
+
+    /**
+     * @brief Start audio playback streaming.
+     * @param audio_play Playback object to start.
+     * @return void.
+     */
     EXTERN_AUDIO_PLAYBACK void audio_playback_start(struct audio_playback* audio_play);
+
+    /**
+     * @brief Stop audio playback streaming.
+     * @param audio_play Playback object to stop.
+     * @return void.
+     */
     EXTERN_AUDIO_PLAYBACK void audio_playback_stop(struct audio_playback* audio_play);
+
+    /**
+     * @brief Fill a playback frame block from the shared buffer.
+     * @param audio_play Playback object providing data.
+     * @param output Output sample buffer to fill.
+     * @param frames Number of frames requested in @p output.
+     * @return void.
+     */
     EXTERN_AUDIO_PLAYBACK void audio_playback_on_playback(struct audio_playback* audio_play, sample_t* output, const size_t frames);
 
 #if defined(__cplusplus)

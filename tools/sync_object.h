@@ -42,17 +42,27 @@ extern "C"
 {
 #endif
 
+    /**
+     * @brief Cross-platform signaling primitive for one-shot frame notifications.
+     */
     struct sync_object
     {
+    /** @brief Requests waiting threads to stop waiting during teardown. */
         bool m_stop;
+    /** @brief Current signaled state. */
         bool m_signaled;
 
 #if defined(_WIN32)
+    /** @brief Windows mutex protecting internal state. */
         CRITICAL_SECTION m_mutex;
+    /** @brief Windows condition variable for wait/signal operations. */
         CONDITION_VARIABLE m_cond;
 #else
+    /** @brief POSIX mutex protecting internal state. */
         pthread_mutex_t m_mutex;
+    /** @brief POSIX condition variable for wait/signal operations. */
         pthread_cond_t m_cond;
+    /** @brief POSIX condition variable attributes (monotonic clock). */
         pthread_condattr_t m_cond_attr;
 #endif
     };
@@ -63,11 +73,41 @@ extern "C"
 #define EXTERN_SYNC_OBJECT extern
 #endif
 
+    /**
+     * @brief Initialize a synchronization object.
+     * @param sync Synchronization object to initialize.
+     * @param initial_state Initial signaled state.
+     * @return `0` on success, `-1` on failure.
+     */
     EXTERN_SYNC_OBJECT int init_sync_object(struct sync_object* sync, bool initial_state);
+
+    /**
+     * @brief Deinitialize a synchronization object and wake waiting threads.
+     * @param sync Synchronization object to deinitialize.
+     * @return `0` on success, `-1` on failure.
+     */
     EXTERN_SYNC_OBJECT int deinit_sync_object(struct sync_object* sync);
 
+    /**
+     * @brief Signal one waiting thread.
+     * @param sync Synchronization object.
+     * @return `0` on success, `-1` on failure.
+     */
     EXTERN_SYNC_OBJECT int sync_object_signal(struct sync_object* sync);
+
+    /**
+     * @brief Wait indefinitely for a signal.
+     * @param sync Synchronization object.
+     * @return `0` on success, `-1` on failure.
+     */
     EXTERN_SYNC_OBJECT int sync_object_wait_for_signal(struct sync_object* sync);
+
+    /**
+     * @brief Wait for a signal up to a timeout.
+     * @param sync Synchronization object.
+     * @param timeout_us Timeout in microseconds.
+     * @return `0` on success, `-1` on failure.
+     */
     EXTERN_SYNC_OBJECT int sync_object_wait_for_signal_timed(struct sync_object* sync, unsigned long timeout_us);
 
 #if defined(__cplusplus)

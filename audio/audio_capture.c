@@ -41,6 +41,14 @@
 #include <unistd.h>
 #endif
 
+/**
+ * @brief Miniaudio capture callback entry point.
+ * @param device Miniaudio capture device invoking the callback.
+ * @param output Unused output buffer for capture mode.
+ * @param input Input sample buffer provided by miniaudio.
+ * @param frame_count Number of frames available in @p input.
+ * @return void.
+ */
 static void frame_capture(struct ma_device* device, void* output, const void* input, ma_uint32 frame_count)
 {
     (void)output;

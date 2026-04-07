@@ -39,6 +39,14 @@
 #include <unistd.h>
 #endif
 
+/**
+ * @brief Miniaudio playback callback entry point.
+ * @param device Miniaudio playback device invoking the callback.
+ * @param output Output sample buffer to fill.
+ * @param input Unused input buffer for playback mode.
+ * @param frame_count Number of frames requested in @p output.
+ * @return void.
+ */
 static void frame_playback(struct ma_device* device, void* output, const void* input, ma_uint32 frame_count)
 {
     (void)input;
